@@ -252,33 +252,30 @@ We can tell when it doesn't work!
 
 # Computer setup
 
-## Checklist
-
-### Git and ssh
-
-```shell
-git clone 
-
-```
-
-
-### Python
+## Things to set up
+Python
 
 ```shell
 python -m venv --prompt=sbsc
 ```
 
-### Cmdstanpy and cmdstan
+Git and ssh
+\tiny
+```shell
+git clone git@github.com:teddygroves/systems_biology_for_scientific_computing.git
+```
+
+
+## Things to set up
+
+Cmdstanpy and cmdstan
 
 ```python
 from cmdstanpy import CmdStanModel
-
 filename = "example_stan_program.stan" 
-code = "data {} parameters {real theta;} model {theta ~ std_normal();}"
-
+code = "data {} parameters {real t;} model {t ~ std_normal();}"
 with open(filename, "w") as f:
     f.write(code)
-
 model = CmdStanModel(stan_file=filename)
 mcmc = model.sample()
 ```
