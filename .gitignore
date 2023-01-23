@@ -1,0 +1,6 @@
+.DS_Store
+.venv
+*.ipynb
+*.html
+*.pdf
+*_files/*
