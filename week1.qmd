@@ -14,14 +14,21 @@ format:
 jupyter: python3
 ---
 # Introduction
-## Welcome!
-Learning objectives for today:
+## General format
 
-1. What are Bayesian statistical inference?
+1. 25-35mins 'theory' aka slides
+2. 25-35mins group computer work
+
+## Slide topics:
+
+1. What is Bayesian statistical inference?
 2. Why is it useful in general?
 3. Why is it useful in systems biology?
 4. The big challenge
-5. Computer setup
+
+## Computer goals
+
+Set up git/ssh, python, cmdstanpy and cmdstan
 
 # What is Bayesian statistical inference?
 
@@ -279,3 +286,16 @@ with open(filename, "w") as f:
 model = CmdStanModel(stan_file=filename)
 mcmc = model.sample()
 ```
+# Next time
+## Next time
+### Theory
+Hamiltonian Monte Carlo:
+- what?
+- why?
+- diagnostics
+
+### Computer
+Stan, cmdstanpy, arviz:
+- formats
+- workflow
+- write a model
