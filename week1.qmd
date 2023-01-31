@@ -263,7 +263,7 @@ We can tell when it doesn't work!
 Python
 
 ```shell
-python -m venv --prompt=sbsc
+python -m venv .venv --prompt=sbsc
 ```
 
 Git and ssh
