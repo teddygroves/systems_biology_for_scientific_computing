@@ -1,0 +1,28 @@
+---
+title: "Simple example analysis"
+subtitle: "Sytems Biology for Scientific Computing: week three"
+bibliography: bibliography.bib
+format:
+  beamer:
+    include-in-header:
+      text: |
+        \linespread{1.5}\selectfont
+    aspectratio: 169
+    theme: Rochester
+    colortheme: seahorse
+    linestretch: 2
+    linkcolor: purple
+---
+
+# Introduction
+
+## Recap
+
+**MCMC** A Markov chain that you can use for Monte Carlo integration
+**Stan** Software that implements MCMC using a recent algorithm
+
+## Plan for today
+
+Go through an example analysis using Stan from end to end.
+
+See the files `monod.html` and `monod.stan` for details...
