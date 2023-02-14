@@ -1,0 +1,131 @@
+---
+title: "Sampling is done: what now?"
+subtitle: "Sytems Biology for Scientific Computing: week four"
+bibliography: ../../bibliography.bib
+format:
+  beamer:
+    include-in-header:
+      text: |
+        \linespread{1.5}\selectfont
+    aspectratio: 169
+    theme: Rochester
+    colortheme: seahorse
+    linestretch: 2
+    linkcolor: purple
+---
+
+# Introduction
+## Recap
+
+Last time we had a look at how to run a Bayesian analysis of data from a Monod
+process using Stan.
+
+The model had 
+
+* a **non-normal measurement process**
+* a **hierarchical component** to model between-strain variation
+* an **ode system** to represent structural knowledge
+
+## Plan for today
+
+**Slides**: what to do after you run MCMC?
+
+**Computer**: apply these ideas to the Monod analysis.
+
+
+# Diagnostics
+
+## $\hat{R}$: did the chains converge?
+
+::::{.columns}
+:::{.column width=40%}
+i.e.
+
+* Do they agree?
+* Are they stationary?
+
+\phantom{}
+
+$\hat{R}$ should be close to 1.
+
+\phantom{}
+
+Find out more: @vehtariRankNormalizationFoldingLocalization2021
+:::
+:::{.column width=60%}
+![](../../img/rhat.png)
+:::
+::::
+
+## Divergent transitions: did HMC's numerical integration fail?
+::::{.columns}
+:::{.column width=40%}
+
+HMC is unhappy when there are different optimal step sizes in different parts of
+parameter space.
+
+\phantom{}
+
+Divergent transitions usually mean biased sample. 
+
+This is a good feature of HMC!
+
+\phantom{}
+
+Find out more:
+[@betancourtDiagnosingBiasedInference2017](https://betanalpha.github.io/assets/case_studies/divergences_and_bias.html).
+::: 
+
+:::{.column width=40%} 
+![](../../img/divergence.png)
+::: 
+::::
+
+# Finding things out
+
+## Finding things out
+
+\begin{align*}
+\text{Thing you want to know} &\approx \text{Expectation of a quantity in the model}  \\
+                              &\approx \int f(\theta) p(\theta) d\theta
+\end{align*}
+
+NB:
+
+* Use Monte Carlo Standard Error to see if you have enough samples
+* MCSE can vary for different expectations of the same quantity
+
+# Model comparison and evaluation
+
+## Very quick decision theory
+
+**Loss function**: If the observation is $y$ and the model says $p(y) = z$, how
+bad is that?
+
+To choose a model, try and minimise expected loss.
+
+To estimate expected loss, make some relevant predictions.
+
+(relevant = probably not in-sample, not all from the same patient, etc).
+
+Which loss function is best depends on the problem.
+
+Find out more: @vehtariSurveyBayesianPredictive2012
+
+## Log likelihood
+
+A good default loss function:
+
+$$
+loss(y, p(y)) = -\ln{p(y)}
+$$
+
+Out of sample log likelihood can often be estimated without MCMC.
+
+For exact out of sample log likelihood, use cross validation.
+
+Find out more: [@landesObjectiveBayesianismMaximum2013, section 2.3] @vehtariPracticalBayesianModel2017
+
+# References
+
+## References {.allowframebreaks}

@@ -1,0 +1,1 @@
+data {} parameters {real t;} model {t ~ std_normal();}

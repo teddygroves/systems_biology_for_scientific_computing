@@ -40,16 +40,16 @@ A rule for evaluating the target function and maybe its gradients
 **Out**: A **M**arkov **C**hain of numbers that you can do **M**onte **C**arlo integtation with
 
 ## MCMC: simple case
-![](./img/1dmcmc.png)
+![](../../img/1dmcmc.png)
 
 ## MCMC: simple case
-![](./img/1dmcmc-path.png)
+![](../../img/1dmcmc-path.png)
 
 ## MCMC: what we want to happen
-![](./img/1dmcmc-happy.png)
+![](../../img/1dmcmc-happy.png)
 
 ## Hamiltonian Monte Carlo
-![](./img/1dhmc.png)
+![](../../img/1dhmc.png)
 
 ## Hamiltonian Monte Carlo: reading
 

@@ -45,7 +45,7 @@ i.e. $p: S \rightarrow [0,1]$ where:
 :::
 
 ::: {.column width="40%"}
-![](./img/jug.jpg)
+![](../../img/jug.jpg)
 :::
 
 :::: 
@@ -66,7 +66,7 @@ e.g.
 :::
 
 ::: {.column width="40%"}
-![[A nice soup](https://www.theguardian.com/lifeandstyle/2017/jan/24/20-best-one-pot-recipes-part-2-tom-kerridge-nigella-lawson-broths-hangover-food)](./img/soup.jpg)
+![[A nice soup](https://www.theguardian.com/lifeandstyle/2017/jan/24/20-best-one-pot-recipes-part-2-tom-kerridge-nigella-lawson-broths-hangover-food)](../../img/soup.jpg)
 :::
 
 :::: 
@@ -90,7 +90,7 @@ Non-Bayesian inferences:
 :::
 
 ::: {.column width="30%"}
-![](./img/soup_with_jug.jpg){height=80% fig-align=right}
+![](../../img/soup_with_jug.jpg){height=80% fig-align=right}
 :::
 
 :::: 
@@ -113,7 +113,7 @@ e.g. "According to the model..."
 :::
 
 ::: {.column width="40%"}
-![](./img/jaynes.jpg){height=80% fig-align=right}
+![](../../img/jaynes.jpg){height=80% fig-align=right}
 :::
 
 :::: 
@@ -133,7 +133,7 @@ This means
 :::
 
 ::: {.column width="40%"}
-![[Laplace, who did Bayesian inference in the 1780s](https://en.wikipedia.org/wiki/Pierre-Simon_Laplace)](img/laplace.jpg){height=80%}
+![[Laplace, who did Bayesian inference in the 1780s](https://en.wikipedia.org/wiki/Pierre-Simon_Laplace)](../../img/laplace.jpg){height=80%}
 :::
 
 :::: 
@@ -183,7 +183,7 @@ $ability \sim N(\mu, \tau)$
 :::
 
 ::: {.column width="60%"}
-![plot from <https://github.com/teddygroves/baseball>](./img/baseball.png)
+![plot from <https://github.com/teddygroves/baseball>](../../img/baseball.png)
 :::
 
 :::: 
@@ -207,7 +207,7 @@ $u(0)$ and $v(0)$ into $u(t)$ and $v(t)$.
 :::
 
 ::: {.column width="40%"}
-![From a [Stan case study](https://mc-stan.org/users/documentation/case-studies/lotka-volterra-predator-prey.html)](./img/lv.png)
+![From a [Stan case study](https://mc-stan.org/users/documentation/case-studies/lotka-volterra-predator-prey.html)](../../img/lv.png)
 :::
 
 :::: 
@@ -252,7 +252,7 @@ We can tell when it doesn't work!
 :::
 
 ::: {.column width="40%"}
-![An image I found [online](http://mlg.eng.cam.ac.uk/tutorials/06/im.pdf)](./img/mcmc.png)
+![An image I found [online](http://mlg.eng.cam.ac.uk/tutorials/06/im.pdf)](../../img/mcmc.png)
 :::
 
 :::: 
