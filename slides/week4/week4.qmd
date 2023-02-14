@@ -126,6 +126,12 @@ For exact out of sample log likelihood, use cross validation.
 
 Find out more: [@landesObjectiveBayesianismMaximum2013, section 2.3] @vehtariPracticalBayesianModel2017
 
+# Next time
+
+## Next time
+
+Handling projects with more than one model.
+
 # References
 
 ## References {.allowframebreaks}
