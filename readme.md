@@ -8,6 +8,6 @@ python packages `jupyter`, `matplotlib` and `plotly`. You should then be able to
 run commands like this:
 
 ```sh
-quarto render week1.qmd 
+quarto render slides/week1/week1.qmd 
 ```
 
