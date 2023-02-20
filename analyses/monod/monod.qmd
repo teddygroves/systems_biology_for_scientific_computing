@@ -290,7 +290,7 @@ fake_measurements = measurements.join(
     .droplevel(["chain", "draw"])
     .rename("simulated_measurement")
 ).copy()
-
+fake_measurements.to_csv("fake_measurements.csv")
 f, axes = plot_sim(true_abundance, fake_measurements, species_to_ax)
 
 f.savefig("monod_simulated_data.png")

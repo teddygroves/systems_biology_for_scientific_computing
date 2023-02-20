@@ -1,0 +1,120 @@
+---
+title: "Bayesian workflow for non-trivial projects"
+subtitle: "Sytems Biology for Scientific Computing: week five"
+bibliography: ../../bibliography.bib
+format:
+  beamer:
+    include-in-header:
+      text: |
+        \linespread{1.5}\selectfont
+    aspectratio: 169
+    theme: Rochester
+    colortheme: seahorse
+    linestretch: 2
+    linkcolor: purple
+---
+
+
+# Introduction
+## Recap
+
+Last time we found out what to do after running MCMC:
+
+* Check **diagnostics** such as $\hat{R}$ and divergent transitions.
+* **Find things out** by checking expectations and their MCSEs.
+* **Evaluate** the model using decision theory.
+
+## Plan for today
+
+How to structure a Bayesian statistics project that can scale to many models,
+datasets and transformations?
+
+# Theory
+
+## Bayesian Workflow
+:::: {.columns align=top totalwidth=8em}
+::: {.column width="60%"}
+Reading: [@gelmanBayesianWorkflow2020]
+
+Main takeaways:
+
+* Work iteratively, starting with a small model
+* Do checks at every stage
+* Use fake data to find and understand problems
+* Draw a lot of graphs
+* Modeling is software development
+:::
+::: {.column width="40%"}
+![](../../img/workflow.png)
+:::
+:::: 
+
+## Tasks in a statistical analysis
+* Get raw data(s)
+* Get prepared data(s)
+* Implement statistical model(s)
+* Interface between prepared data(s) and model(s)
+* Specify and perform inference(s) 
+* Investigate data(s) and inference(s)
+* Document what was done
+
+# Practice
+## General considerations for a scaleable statistics workflow
+
+Use **files** (don't leave things in your or the computer's memory)
+
+\phantom{}
+
+Separate tasks into self-contained **modules** where possible.
+
+\phantom{}
+
+Use **automation** to save work and ensure reproducibility.
+
+## bibat
+:::: {.columns align=top totalwidth=8em}
+::: {.column width="60%"}
+<https://github.com/teddygroves/bibat>
+
+A Python package that I wrote for setting up scaleable Bayesian analysis projects.
+
+"bibat" stands for "Batteries-Included Bayesian Analysis Template"
+
+:::
+::: {.column width="40%"}
+![](../../img/bibat-light.png)
+:::
+::::
+
+## bibat
+:::: {.columns align=top totalwidth=8em}
+::: {.column width="60%"}
+
+Installation
+```{sh}
+$ pip install bibat
+```
+
+Usage
+```{sh}
+$ bibat
+```
+
+Documentation <https://bibat.readthedocs.io/en/latest/>
+
+:::
+
+::: {.column width="40%"}
+![](../../img/bibat-light.png)
+:::
+
+:::: 
+
+## Challenge
+
+Implement the [monod analysis](https://github.com/teddygroves/systems_biology_for_scientific_computing/tree/main/analyses/monod) using bibat!
+
+Find some raw data [here](https://github.com/teddygroves/systems_biology_for_scientific_computing/tree/main/analyses/monod/fake_measurements.csv).
+
+# References
+## References

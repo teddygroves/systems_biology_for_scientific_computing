@@ -10,4 +10,3 @@ run commands like this:
 ```sh
 quarto render slides/week1/week1.qmd 
 ```
-
