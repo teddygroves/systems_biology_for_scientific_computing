@@ -1,0 +1,23 @@
+,Unnamed: 0,Adipose,Plasma,Liver,Muscle,Other
+0,P_insulin,0,0,0,0,1
+1,P_glucose,0,1,0,0,0
+2,P_TG,0,1,0,0,0
+3,P_NEFA,0,1,0,0,0
+4,P_chylo,0,1,0,0,0
+5,L_glucose,0,0,1,0,0
+6,L_glycogen,0,0,1,0,0
+7,L_G6P,0,0,1,0,0
+8,L_pyruvate,0,0,1,0,0
+9,L_TG_secr,0,0,1,0,0
+10,L_TG_stor,0,0,1,0,0
+11,L_FFA,0,0,1,0,0
+12,M_glucose,0,0,0,1,0
+13,M_glycogen,0,0,0,1,0
+14,M_G6P,0,0,0,1,0
+15,M_pyruvate,0,0,0,1,0
+16,M_TG,0,0,0,1,0
+17,M_FFA,0,0,0,1,0
+18,A_glucose,1,0,0,0,0
+19,A_glycerol,1,0,0,0,0
+20,A_TG,1,0,0,0,0
+21,A_FFA,1,0,0,0,0
