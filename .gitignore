@@ -3,4 +3,6 @@
 *.ipynb
 *.html
 *.pdf
-*_files/*
+*_files*
+*.hpp
+*_extensions*

@@ -1,0 +1,117 @@
+---
+title: "Quantitative omics data in strain design"
+subtitle: "Sytems Biology for Scientific Computing: week six"
+bibliography: ../../bibliography.bib
+format:
+  beamer:
+    include-in-header:
+      text: |
+        \linespread{1.5}\selectfont
+    aspectratio: 169
+    theme: Rochester
+    colortheme: seahorse
+    linestretch: 2
+    linkcolor: purple
+---
+
+# Introduction
+## Recap
+
+Last time we learned some tips for structuring Bayesian inference projects:
+
+* Start with a too-small model
+* Make lots of checks, graphs and models
+* Use files, modules and automation
+* Your project may expand unpredictably
+* Templates are handy
+
+## Plan for today
+
+What are quantitative omics data and why are they interesting statistically?
+
+# Why?
+## Cell Factories
+
+:::: {.columns}
+
+::: {.column width=50%}
+{{< fa thumbs-up >}} Almost anything can be fermented.
+
+{{< fa thumbs-up >}} Fermentation is sustainable.
+
+{{< fa thumbs-up >}} Recent breakthroughs make cells easier to engineer.
+
+{{< fa question >}} Yield is a problem!
+:::
+
+::: {.column width=40%}
+![](../../img/fermenter.jpg)
+:::
+::::
+
+## How to get better yield?
+
+Trial and error with measured outputs
+
+&nbsp; &nbsp; &nbsp;  {{< fa question >}} Too many dials to tweak
+
+ALE
+
+&nbsp; &nbsp; &nbsp; {{< fa question >}} Unwanted mutations
+
+Rational design
+
+&nbsp; &nbsp; &nbsp; {{< fa question >}} Too many unknowns
+
+## How to get better yield?
+
+Measure outputs *and* mechanisms
+
+&nbsp; &nbsp; &nbsp; {{< fa thumbs-up >}} Not too many gene edits
+
+&nbsp; &nbsp; &nbsp; {{< fa thumbs-up >}} Not too many dials to tweak
+
+&nbsp; &nbsp; &nbsp; {{< fa thumbs-up >}} With enough data we can find out how to improve yield 
+
+## Quantitative omics data
+
+Thanks to recent advances we can design and build strains and then measure
+
+* gene sequences (genomics)
+* RNA transcripts (transcriptomics)
+* metabolite concentrations (metabolomics)
+* protein concentrations (proteomics)
+* fluxes (fluxes)
+
+CfB is one of not that many places that can generate and use this data at scale.
+
+# Technologies
+## Liquid Chromatography and Mass Spectrometry
+
+In: sample from fermentation
+
+Out: 
+
+- Quantification of enzyme or metabolite abundance
+- Indentification of enzymes or metabolites
+
+Interesting statistical features:
+
+- Absolute quantification depends on calibration via standards
+- Multiple sources of non-random error
+- Even with standards, more informative about relative than absolute abundance
+
+## Isotope labelling
+
+In: metabolite and external flux measurements from an organism fed labelled food
+
+Out: estimates of internal fluxes
+
+Interesting statistical features:
+
+- compositional measurements (proportion of metabolite with certain isotopic mass)
+- complicated but known relationship between fluxes and measurements
+- need to make assumptions about where fluxes come from (steady state, thermodynamics, kinetics etc)
+
+
+

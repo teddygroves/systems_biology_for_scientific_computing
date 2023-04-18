@@ -1,0 +1,32 @@
+---
+title: "Whole body models"
+subtitle: "Sytems Biology for Scientific Computing: week seven"
+bibliography: ../../bibliography.bib
+format:
+  beamer:
+    include-in-header:
+      text: |
+        \linespread{1.5}\selectfont
+    aspectratio: 169
+    theme: Rochester
+    colortheme: seahorse
+    linestretch: 2
+    linkcolor: purple
+---
+
+# Introduction
+## Recap
+
+Last time we learned about quantitative omics data.
+
+* Things we can measure: sequences, transcripts, metabolites, proteins, fluxes
+* Technologies: LCMS and isotope labelling
+* Statistical features: compositionality, sequentiality, structural knowledge
+
+## Plan for today
+Build a very simple Bayesian whole body kinetic model.
+
+## Useful references
+
+* [Stan ODE documentation](https://mc-stan.org/docs/stan-users-guide/ode-solver.html)
+
