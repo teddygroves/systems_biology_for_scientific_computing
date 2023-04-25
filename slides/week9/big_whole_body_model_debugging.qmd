@@ -1,0 +1,529 @@
+---
+title: Recreating a full whole body ODE model using Stan
+jupyter: python3
+output:
+  html: default
+  ipynb: default
+---
+
+
+A report created using bibat version 0.1.1
+
+Teddy Groves
+
+Last time we fit a small whole body model using Stan and cmdstanpy. This
+time we will try and fit a bigger one - specifically the model from
+Pratt, Wattis, and Salter (2015), which Laura had kindly given me data
+for.
+
+# Setup
+
+The first code block imports the Python packages that we will use for
+this analysis. The bigger model requires a little bit more data
+wrangling, which I handled in advance using bibat. In this document I
+just want to focus on the Stan bits so we will just call the pre-made
+data preparation function. Note that the code here should be run from
+the root of the `pratt` directory in order for the relative import at
+the bottom of this cell to work.
+
+
+```{python}
+import os
+import itertools
+
+import cmdstanpy
+import arviz as az
+import numpy as np
+import pandas as pd
+
+from matplotlib import pyplot as plt
+```
+
+This code sets a global variable called `SEED`. We will pass this to any
+code that does random number generation in order to ensure that it
+generates the same numbers every time.
+
+```{python}
+SEED = 123
+```
+
+This cell uses a pre-prepared function to load all the data we will need
+in a nice format
+
+```{python}
+data_dir = os.path.join(os.getcwd(), "data", "prepared", "pratt")
+species = pd.read_csv(os.path.join(data_dir, "species.csv"))
+parameters = pd.read_csv(os.path.join(data_dir, "parameters.csv"))
+compartments = pd.read_csv(os.path.join(data_dir, "compartments.csv"))
+S_cpt = (
+    pd.read_csv(os.path.join(data_dir, "compartment_stoichiometry.csv"))
+    .rename(columns={"Unnamed: 0": "species"})
+    .set_index("species")
+    .drop("Unnamed: 0.1", axis=1)
+)
+S = (
+    pd.read_csv(os.path.join(data_dir, "stoichiometry.csv"))
+    .set_index("species")
+    .drop("Unnamed: 0", axis=1)
+    .drop("Unnamed: 48", axis=1)
+)
+assert S_cpt.index.equals(S.index)
+species
+parameters
+compartments
+S_cpt
+S
+```
+
+```{python}
+S.loc["L_glucose"].loc[lambda s: s != 0]
+# .index.map(lambda ix: S.columns.get_loc(ix)) + 1
+```
+
+# Stan code
+
+The next cell loads a new Stan model. It’s almost exactly the same as
+the model from last time! The only differences are that:
+
+-   the `functions` block contains only one line
+    `#include ode_pratt.stan`. This is because the bigger model requires
+    some quite involved functions. In order to not have to think about
+    too many things at once, I put these functions in their own file.
+-   the first argument to the `ode_bdf` function is `get_dxdt_pratt`.
+    This is one of the new functions from `ode_pratt.stan`
+
+```{python}
+model = cmdstanpy.CmdStanModel(stan_file=os.path.join("src", "stan", "pratt.stan"))
+print(model.code())
+```
+
+So most of the interesting new material is in the file `ode_pratt.stan`.
+The next code cell prints the contents of this file so that we can check
+it out.
+
+The function `mm_one_substrate` is the same as last time. The function
+`get_dxdt_pratt` is exactly the same as the function `get_dxdt_simple`
+from last time, but with a different function for calculating the flux.
+The shorter new functions are pretty easy to read.
+
+So the only really new thing is the long function `get_flux_pratt`. This
+function stores some numbers as variables, then calculates the flux for
+each reaction according to the rate laws from the source paper Pratt,
+Wattis, and Salter (2015).
+
+Note that the parameter and species indexing is easier to follow and
+debug for the reactions whose fluxes are abstracted using functions
+compared with the reactions whose fluxes are calculated in place!
+
+```{python}
+ode_file = os.path.join("src", "stan", "ode_pratt.stan")
+with open(ode_file, "r") as f:
+    ode_code = f.read()
+print(ode_code)
+```
+
+# Data preparation
+
+This can be done very similarly to last time.
+
+The first step is to do a write bit of Python to define all the things
+we need.
+
+```{python}
+species["compartment_volume"] = (
+      compartments
+      .set_index("name")
+      ["value_pratt"]
+      .reindex(species["compartment"])
+      .values
+)
+species["initial_concentration"] = (
+    species["initial_abundance"] / species["compartment_volume"]
+)
+species_code = dict(zip(species["name"], range(1, len(species["name"]) + 1)))
+
+parameters["prior_mu"] = np.log(parameters["value_pratt"])
+parameters["prior_sigma"] = 0.15
+parameters["is_fixed"] = parameters["value_pratt"] == 0
+fixed_parameters = parameters.loc[lambda df: df["is_fixed"]]
+free_parameters = parameters.loc[lambda df: ~df["is_fixed"]]
+
+timepoint = np.linspace(0.01, 50, 2)
+y = pd.DataFrame(
+    itertools.product(species["name"], range(len(timepoint))), 
+    columns=["species", "timepoint_ix"]
+).assign(sd=0.1)
+```
+
+Now, just like last time, the next cell creates a dictionary whose keys
+match the variables in the data block of the Stan model and whose values
+cmdstanpy can ingest.
+
+```{python}
+data_shared = {
+    "N_species": len(species),
+    "N_reaction": S.shape[1],
+    "N_compartment": len(compartments),
+    "N_parameter": len(parameters),
+    "N_fixed_parameter": len(fixed_parameters),
+    "N_timepoint": len(timepoint),
+    "N_measurement": len(y),
+    "S_rxn": S.values,
+    "S_cpt": S_cpt.values,
+    "compartment_volume": compartments["value_pratt"].values,
+    "initial_concentration": species["initial_concentration"].values,
+    "timepoint": timepoint,
+    "fixed_parameter_value": fixed_parameters["value_pratt"].values,
+    "fixed_parameter_ix": fixed_parameters.index.values + 1,
+    "free_parameter_ix": free_parameters.index.values + 1,
+    "y_timepoint_ix": y["timepoint_ix"].values + 1,
+    "y_species_ix": y["species"].apply(species_code.get).values,
+    "y_sd": y["sd"].values,
+    "prior_p": [
+      free_parameters["prior_mu"].values,
+      free_parameters["prior_sigma"].values
+    ],
+    "rel_tol": 1e-12,
+    "abs_tol": 1e-12,
+    "max_num_steps": int(1e9)
+}
+data_gen = {**data_shared, **{"y": np.ones(len(y)), "likelihood": 0, }}
+```
+
+```{python}
+coords={
+    "timepoint": timepoint,
+    "species": species["name"].values,
+    "reaction": S.columns,
+    "parameter_name": parameters["name"].values,
+    "measurement_ix": y.index
+}
+dims={
+    "p": ["parameter_name"],
+    "conc": ["timepoint", "species"],
+    "flux": ["timepoint", "reaction"],
+    "yrep": ["measurement_ix"]
+}
+init = {"p": parameters["value_pratt"].values}
+mcmc = model.sample(
+    data=data_gen,
+    inits=init, 
+    fixed_param=True,
+    iter_sampling=1,
+    chains=1,
+    show_console=True
+)
+idata_gen = az.from_cmdstanpy( 
+     mcmc,
+     posterior_predictive={"y": "yrep"},
+     coords=coords,
+     dims=dims
+)
+```
+
+Uh oh, some warnings that mention CVODE! This is worrying because the
+ODE tolerance hyperparameters are already pretty strict. Time for some
+debugging…
+
+# Debugging
+
+The number one rule for debugging Stan is to work in a high level
+language like Python as much as possible.
+
+One way to do this is by writing trivial Stan programs that execute
+single functions or small bits of code. I wrote one of these to test the
+flux function `get_flux_pratt` and another one to test the ode step.
+Here is the flux program:
+
+```{python}
+model_flux = cmdstanpy.CmdStanModel(
+    stan_file=os.path.join("src", "stan", "test_flux_pratt.stan")
+)
+print(model_flux.code())
+```
+
+Note that there is no `parameters` or `model` block - it is better to
+avoid these where possible as code written in these blocks tends to be
+more computationally costly.
+
+Since the new program’s data variables all have the same names as in our
+main model, we can just reuse the existing dictionary `data_gen` when
+running the test program.
+
+```{python}
+data_flux = {
+    "N_species": len(species),
+    "N_reaction": S.shape[1],
+    "N_parameter": len(parameters),
+    "x": species["initial_concentration"].values,
+    "p": parameters["value_pratt"].values,
+    "t": 150
+}
+
+mcmc_flux = model_flux.sample(data=data_flux, fixed_param=True, iter_sampling=1, seed=SEED)
+idata_flux = az.from_cmdstanpy(
+    mcmc_flux, 
+    coords={"reaction": S.columns, "parameter": parameters["name"], "species": species["name"]},
+    dims={"x": ["species"], "p": ["parameter"], "flux": ["reaction"]}
+)
+idata_flux.posterior["flux"].sel(chain=0, draw=0).to_series()
+```
+
+Some of the fluxes are very high compared to the others - interesting!
+
+Next we can do the same process for the ODE. Here is the test model:
+
+```{python}
+model_ode = cmdstanpy.CmdStanModel(
+    stan_file=os.path.join("src", "stan", "test_ode_pratt.stan")
+)
+print(model_ode.code())
+```
+
+Here is the output:
+
+```{python}
+data_ode = {**data_shared, **{"p": parameters["value_pratt"].values}}
+
+mcmc_ode = model_ode.sample(
+    data=data_ode, fixed_param=True, iter_sampling=1, seed=SEED
+)
+idata_ode = az.from_cmdstanpy(
+    mcmc_ode, 
+    coords=coords,
+    dims=dims
+)
+idata_ode.posterior["flux"].sel(chain=0, draw=0).to_series().unstack("timepoint")
+```
+
+Two species—`L_TG_secr` and `L_pyruvate`—are negative, which shouldn’t
+ever happen. Moreover, they are not close to zero, indicating that the
+problem is probably a coding error (we specified the equations
+incorrectly) rather than an ODE solver failure.
+
+The species `A_glucose`, `M_glucose` and `P_glucose` get very high
+concentrations, which might be unrealistic.
+
+Sure enough it turns out there was an error in the diet function for glucose!
+The next cell illustrates this with a new stan program `test_diet.stan`
+
+```{python}
+model_diet = cmdstanpy.CmdStanModel(stan_file=os.path.join("src", "stan", "test_diet.stan"))
+print(model_diet.code())
+mcmc_diet = model_diet.sample(data={}, fixed_param=True, iter_sampling=1, seed=SEED)
+idata_diet = az.from_cmdstanpy(mcmc_diet)
+diet = pd.DataFrame({
+    k: idata_diet.posterior["diet_" + k].sel(chain=0, draw=0).to_series()
+    for k in ["tg", "glucose", "glucose_bad"]
+})
+f, ax = plt.subplots(figsize=[15, 5])
+txt = ax.set(xlabel="Time", ylabel="Flux")
+plots = diet.plot(ax=ax)
+```
+
+Unfortunately there are more problems!
+
+I wrote out the equations again and put the results in a new ODE file `ode_pratt_fix.stan`. The next cell checks whether this makes any difference.
+
+```{python}
+model_flux_fix = cmdstanpy.CmdStanModel(
+    stan_file=os.path.join("src", "stan", "test_flux_pratt_fix.stan")
+)
+mcmc_flux_fix = model_flux_fix.sample(data=data_flux, fixed_param=True, iter_sampling=1, seed=SEED)
+idata_flux_fix = az.from_cmdstanpy(
+    mcmc_flux_fix, 
+    coords={"reaction": S.columns, "parameter": parameters["name"], "species": species["name"]},
+    dims={"x": ["species"], "p": ["parameter"], "flux": ["reaction"]}
+)
+flux_fixed = idata_flux_fix.posterior["flux"].sel(chain=0, draw=0).to_series()
+flux_old = idata_flux.posterior["flux"].sel(chain=0, draw=0).to_series()
+
+flux_fixed - flux_old
+```
+
+It made a difference - I previously made a mistake with the reaction `vL_TG_secr_to_P_TG`.
+
+To check if there was a problem with my stoichiometric matrix copying, I tried re-writing these using a different method.
+
+```{python}
+compound_stoichiometries = {
+    "P_insulin": {"vP_insulin_in": 1, "vP_insulin_out": -1},
+    "P_glucose": {
+        "vP_glucose_to_M_glucose": -1,
+        "vP_glucose_to_A_glucose": -1,
+        "vP_glucose_out": -1,
+        "vP_glucose_to_L_glucose": -1,
+        "vL_glucose_to_P_glucose": 1,
+        "vM_glucose_to_P_glucose": 1,
+        "vA_glucose_to_P_glucose": 1
+    },
+    "P_TG": {
+        "vP_TG_to_L_FFA" : -1,
+        "vL_TG_stor_to_P_TG": 1,
+        "vL_TG_secr_to_P_TG": 1,
+        "vP_TG_to_M_FFA": -1,
+        "vP_TG_to_A_FFA": -1
+    },
+    "P_NEFA": {
+        "vP_NEFA_to_M_FFA": -1,
+        "vP_NEFA_to_A_FFA": -1,
+        "vP_NEFA_to_L_FFA": -1,
+        "vP_chylo_to_P_NEFA": 3,
+        "vA_TG_to_P_NEFA_and_A_glycerol": 3,
+    },
+    "P_chylo": {
+        "vP_chylo_in": 1,
+        "vP_chylo_to_M_FFA": -1,
+        "vP_chylo_to_L_FFA": -1,
+        "vP_chylo_to_A_FFA": -1,
+        "vP_chylo_to_P_NEFA": -1,
+    },
+    "L_glucose": {
+        "vP_glucose_to_L_glucose": 1,
+        "vL_glucose_in": 1,
+        "vL_glucose_to_L_G6P": -1,
+        "vL_glucose_to_P_glucose": -1,
+        "vL_G6P_to_L_glucose": 1,
+    },
+    "L_glycogen":{
+        "vL_G6P_to_L_glycogen": 1,
+        "vL_glycogen_to_L_G6P": -1,
+    },
+    "L_G6P": {
+        "vL_glucose_to_L_G6P": 1, 
+        "vL_G6P_to_L_glycogen": -1,
+        "vL_G6P_to_L_pyruvate": -1,
+        "vL_glycogen_to_L_G6P": 1,
+        "vL_G6P_to_L_glucose": -1,
+        "vL_pyruvate_to_L_G6P": 1,
+        "vA_glycerol_to_L_G6P": 1,
+    },
+    "L_pyruvate": {
+        "vL_G6P_to_L_pyruvate": 1,
+        "vL_pyruvate_in": 1,
+        "vL_pyruvate_to_L_FFA": -1,
+        "vL_pyruvate_to_L_G6P": -1,
+        "vM_pyruvate_to_L_pyruvate": 1,
+    },
+    "L_TG_secr": {
+        "vL_TG_secr_to_P_TG": -1,
+        "vL_FFA_to_L_TG_secr": 1,
+    },
+    "L_TG_stor": {
+        "vL_TG_stor_to_P_TG": -1,
+        "vL_FFA_to_L_TG_stor": 1,
+        "vL_TG_stor_to_L_FFA": -1
+    },
+    "L_FFA": {
+        "vP_TG_to_L_FFA": 3,
+        "vP_chylo_to_L_FFA": 3,
+        "vP_NEFA_to_L_FFA": 1, 
+        "vL_pyruvate_to_L_FFA": 1, 
+        "vL_FFA_to_L_TG_secr": -3,
+        "vL_FFA_to_L_TG_stor": -3,
+        "vL_FFA_out": -1, 
+        "vL_TG_stor_to_L_FFA": 3,
+    },
+    "M_glucose": {
+        "vP_glucose_to_M_glucose": 1,
+        "vM_glucose_to_M_G6P": -1,
+        "vM_glucose_to_P_glucose": -1,
+    },
+    "M_glycogen": {
+        "vM_glycogen_to_M_G6P": -1,
+        "vM_G6P_to_M_glycogen": 1,
+    },
+    "M_G6P": {
+        "vM_glucose_to_M_G6P": 1, 
+        "vM_glycogen_to_M_G6P": 1, 
+        "vM_G6P_to_M_glycogen": -1,
+        "vM_G6P_to_M_pyruvate": -1,
+    },
+    "M_pyruvate": {
+        "vM_G6P_to_M_pyruvate": 1,
+        "vM_pyruvate_out": -1,
+        "vM_pyruvate_to_L_pyruvate": -1,
+    },
+    "M_TG": {
+        "vM_TG_to_M_FFA": -1, 
+        "vM_FFA_to_M_TG": 1,
+    },
+    "M_FFA": {
+        "vP_TG_to_M_FFA": 3,
+        "vP_NEFA_to_M_FFA": 1, 
+        "vP_chylo_to_M_FFA": 3,
+        "vM_TG_to_M_FFA": 3,
+        "vM_FFA_to_M_TG": -3,
+        "vM_FFA_out": -1
+    },
+    "A_glucose": {
+        "vP_glucose_to_A_glucose": 1, 
+        "vA_FFA_and_A_glucose_to_A_TG": -1,
+        "vA_glucose_to_P_glucose": -1,
+    },
+    "A_glycerol": {
+        "vA_glycerol_to_L_G6P": -1,
+        "vA_TG_to_P_NEFA_and_A_glycerol": 1,
+    },
+    "A_TG": {
+        "vA_FFA_and_A_glucose_to_A_TG": 1, 
+        "vA_TG_to_P_NEFA_and_A_glycerol": -1,
+    },
+    "A_FFA": {
+        "vP_NEFA_to_A_FFA": 1,
+        "vP_TG_to_A_FFA": 3, 
+        "vP_chylo_to_A_FFA": 3, 
+        "vA_FFA_and_A_glucose_to_A_TG": -3
+    },
+}
+
+S_fix = (
+    pd.DataFrame.from_dict(compound_stoichiometries)
+    .fillna(0)
+    .T
+    .rename_axis("species")
+    .reindex(S.index)
+    .reindex(S.columns, axis=1)
+)
+S_fix.mask((S_fix - S) == 0).stack()
+```
+
+some more mistakes in my data entry!
+
+```{python}
+model_ode_fix = cmdstanpy.CmdStanModel(
+    stan_file=os.path.join("src", "stan", "test_ode_pratt_fix.stan")
+)
+mcmc_ode_fix = model_ode_fix.sample(
+    data={**data_ode, 
+          **{
+              "S_rxn": S_fix, 
+              "max_num_steps": int(1e7),
+              "rel_tol": 1e-6,
+              "abs_tol": 1e-6,
+          }
+         }, 
+          fixed_param=True, iter_sampling=1, seed=SEED, show_console=True
+)
+idata_ode_fix = az.from_cmdstanpy(
+    mcmc_ode_fix, 
+    coords=coords,
+    dims=dims
+)
+conc_fix = idata_ode_fix.posterior["conc"].sel(chain=0, draw=0).to_series().unstack("timepoint")
+conc_old = idata_ode.posterior["conc"].sel(chain=0, draw=0).to_series().unstack("timepoint")
+
+conc_fix - conc_old
+```
+
+```{python}
+conc_fix
+```
+
+That's better!
+
+Pratt, Adrian C., Jonathan A. D. Wattis, and Andrew M. Salter. 2015.
+“Mathematical Modelling of Hepatic Lipid Metabolism.” *Mathematical
+Biosciences* 262 (April): 167–81.
+<https://doi.org/10.1016/j.mbs.2014.12.012>.
+
